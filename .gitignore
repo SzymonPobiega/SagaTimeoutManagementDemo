@@ -1,0 +1,10 @@
+/.servicecontrol-db/Databases/primary/Configuration/headers.one
+/.endpoint.log
+/.servicecontrol-db/Databases/primary/Configuration/headers.two
+/.servicecontrol-db/*
+/.servicecontrol.log
+/.servicepulse.log
+/.vs/*
+/packages/*
+/src/OrderEndpoint/bin/*
+/src/OrderEndpoint/obj/*
