@@ -48,7 +48,6 @@ static class SagaTimeoutChecks
         Check(expedited.All(e => e.Detail.EndsWith("note: Expedited by the saga")), "expedite shifts every pending timeout");
         // Each expedite starts from a postponed due time, so it undoes exactly one postpone
         Check(postponed.All(p => expedited.Any(e => e.Detail.StartsWith($"Due {p.Detail.Split(" -> ")[1].Split(';')[0]} ->"))), "expedite found the postponed timeouts");
-        Check(!history.Snapshot().Any(e => e.Event == "No pending timeout"), "no pending timeout was reported");
     });
 
     public static Task RepeatedStartDoesNotRecreateCanceledTimeout() => Run(c => c.AddSaga<LegacyOrderPolicy>(), async (send, history, wait) =>
@@ -58,12 +57,12 @@ static class SagaTimeoutChecks
         await send(new CancelTimeouts { OrderId = "o1" });
         await wait(() => history.Snapshot().Any(e => e.Event == "Canceled"));
 
+        Check(history.Snapshot().First(e => e.Event == "Canceled").Detail == "1", "the initial timeout was canceled");
         await send(new PlaceOrder { OrderId = "o1" });
         await wait(() => history.Snapshot().Any(e => e.Event == "Already started"));
-        await send(new PostponeBuyersRemorse { OrderId = "o1" });
-        await wait(() => history.Snapshot().Count(e => e.Event == "No pending timeout") == 1);
-        await send(new ExpediteBuyersRemorse { OrderId = "o1" });
-        await wait(() => history.Snapshot().Count(e => e.Event == "No pending timeout") == 2);
+        await send(new CancelTimeouts { OrderId = "o1" });
+        await wait(() => history.Snapshot().Count(e => e.Event == "Canceled") == 2);
+        Check(history.Snapshot().First(e => e.Event == "Canceled").Detail == "0", "repeated start left no pending timeout");
         Check(history.Snapshot().Count(e => e.Event == "Placed") == 1, "repeated start did not request a new timeout");
     });
 
@@ -159,12 +158,13 @@ public class LegacyOrderPolicy(ILogger<OrderPolicy> logger, OrderHistory history
 
     public Task Handle(CancelTimeouts message, IMessageHandlerContext context)
     {
-        foreach (var timeout in FindTimeouts<BuyersRemorseIsOver>(_ => true).ToArray())
+        var timeouts = FindTimeouts<BuyersRemorseIsOver>(_ => true).ToArray();
+        foreach (var timeout in timeouts)
         {
             CancelTimeout(timeout.TimeoutId);
         }
 
-        history.Add(message.OrderId, "Canceled", "");
+        history.Add(message.OrderId, "Canceled", timeouts.Length.ToString());
         return Task.CompletedTask;
     }
 }

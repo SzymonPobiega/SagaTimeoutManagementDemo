@@ -25,16 +25,25 @@ foreach (var route in new[] { "/orders/o1", "/orders/o1/postpone", "/orders/o1/e
     Check(response.StatusCode == System.Net.HttpStatusCode.Accepted, $"{route} returns 202");
 }
 
-foreach (var route in new[] { "/orders/%20", "/orders/%20/postpone", "/orders/%20/expedite" })
+foreach (var orderId in new[] { "%20", new string('x', 201) })
 {
-    var response = await client.PostAsync(route, null);
-    Check(response.StatusCode == System.Net.HttpStatusCode.BadRequest, $"{route} returns 400");
+    foreach (var suffix in new[] { "", "/postpone", "/expedite" })
+    {
+        var response = await client.PostAsync($"/orders/{orderId}{suffix}", null);
+        Check(response.StatusCode == System.Net.HttpStatusCode.BadRequest, $"invalid order id with '{suffix}' returns 400");
+    }
 }
 
 Check(session.SentMessages.Length == 3, "three messages sent");
 Check(session.SentMessages[0].Message is PlaceOrder { OrderId: "o1" }, "PlaceOrder sent");
 Check(session.SentMessages[1].Message is PostponeBuyersRemorse { OrderId: "o1" }, "PostponeBuyersRemorse sent");
 Check(session.SentMessages[2].Message is ExpediteBuyersRemorse { OrderId: "o1" }, "ExpediteBuyersRemorse sent");
+
+foreach (var suffix in new[] { "", "/postpone", "/expedite" })
+{
+    var response = await client.PostAsync($"/orders/{new string('x', 200)}{suffix}", null);
+    Check(response.StatusCode == System.Net.HttpStatusCode.Accepted, $"200-character order id with '{suffix}' is accepted");
+}
 
 Check(routeHistory.Snapshot().Length == 0, "queuing commands does not claim they were processed");
 
@@ -61,13 +70,24 @@ Check(snapshot[0].OrderId == "o149", "snapshots are unaffected by later writes")
 // The saga records what it actually handled
 var policy = new OrderPolicy(NullLogger<OrderPolicy>.Instance, history = new OrderHistory()) { Data = new OrderPolicyData { OrderId = "s1" } };
 await policy.Timeout(new BuyersRemorseIsOver { OrderId = "s1", Note = "n" }, new TestableMessageHandlerContext());
-// Postpone, expedite and no-pending-timeout need a timeout-capable persister, which NServiceBus.Testing lacks
+// Timeout-management checks below use a real persister because NServiceBus.Testing lacks that support
 Check(history.Snapshot().Select(e => e.Event).SequenceEqual(["Timeout completed"]), "timeout handling emits history");
 Check(history.Snapshot()[0].Detail.Contains("note: n"), "timeout history carries the note");
 
 Check(Config(("ConnectionStrings:transport", "amqp://aspire"), ("RabbitMQ:ConnectionString", "host=other")) == "amqp://aspire", "Aspire connection string wins");
 Check(Config(("RabbitMQ:ConnectionString", "host=other")) == "host=other", "standalone key is the fallback");
 Check(Config() == "host=localhost", "localhost is the default");
+
+try
+{
+    new ConfigurationBuilder().Build().GetSagaConnectionString();
+    Check(false, "missing saga connection string throws");
+}
+catch (InvalidOperationException e)
+{
+    Check(e.Message.Contains("ConnectionStrings__sagas"), "missing saga connection string names the setting");
+}
+Check(new ConfigurationBuilder().AddInMemoryCollection([new("ConnectionStrings:sagas", "Server=x")]).Build().GetSagaConnectionString() == "Server=x", "saga connection string is read");
 
 await SagaTimeoutChecks.RepeatedStartIsIgnored();
 await SagaTimeoutChecks.LegacyMultipleTimeoutsAreAllShifted();

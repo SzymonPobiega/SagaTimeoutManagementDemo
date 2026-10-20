@@ -20,7 +20,7 @@ static class OrderPage
         <h1>Saga timeout demo</h1>
         <form id="form">
         <label for="orderId">Order id</label>
-        <input id="orderId" required>
+        <input id="orderId" required maxlength="200">
         <button type="button" data-path="">Start order</button>
         <button type="button" data-path="/postpone">Postpone 1 minute</button>
         <button type="button" data-path="/expedite">Expedite 1 minute</button>

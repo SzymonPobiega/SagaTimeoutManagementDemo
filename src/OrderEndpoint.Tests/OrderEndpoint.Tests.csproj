@@ -6,6 +6,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Fixtures use the learning persistence and a test saga, not the SQL persistence of the endpoint -->
+    <SqlPersistenceGenerateScripts>false</SqlPersistenceGenerateScripts>
   </PropertyGroup>
 
   <ItemGroup>

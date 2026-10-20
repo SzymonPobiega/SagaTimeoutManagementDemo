@@ -24,8 +24,15 @@ platform.AddServicePulse("servicepulse", serviceControl)
     .WithImageRegistry("ghcr.io")
     .WithImageTag("pr-3166");
 
+// The endpoint's saga persistence; Aspire creates the database before the endpoint starts
+var sagaDatabase = builder.AddSqlServer("sqlserver")
+    .WithDataVolume()
+    .AddDatabase("sagas");
+
 builder.AddProject<Projects.OrderEndpoint>("orderendpoint")
     .WithParticularPlatform(platform)
+    .WithReference(sagaDatabase)
+    .WaitFor(sagaDatabase)
     .WaitFor(rabbitMq)
     .WaitFor(serviceControl);
 

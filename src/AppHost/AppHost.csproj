@@ -6,13 +6,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>SagaTimeoutManagementDemo.AppHost</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="13.6.1" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" Version="13.6.1" />
     <PackageReference Include="Particular.Aspire.Hosting.ServicePlatform" Version="1.1.0" />
     <!-- Patch the platform integration's transitive dependency (GHSA-qhrr-8q5h-9q3h). -->
     <PackageReference Include="MessagePack" Version="2.5.303" />
+    <!-- Patch the SQL Server integration's vulnerable transitive dependency. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <ProjectReference Include="..\OrderEndpoint\OrderEndpoint.csproj" />
   </ItemGroup>
 

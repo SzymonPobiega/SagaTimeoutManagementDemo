@@ -9,6 +9,10 @@
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="10.3.0-timeouts.2" />
+    <PackageReference Include="NServiceBus.Persistence.Sql" Version="9.1.0-timeouts.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.5" />
+    <!-- Patch SqlClient's vulnerable transitive dependency. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="NServiceBus.RabbitMQ" Version="11.2.1" />
   </ItemGroup>
 
