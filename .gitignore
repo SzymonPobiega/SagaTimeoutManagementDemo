@@ -6,5 +6,5 @@
 /.servicepulse.log
 /.vs/*
 /packages/*
-/src/OrderEndpoint/bin/*
-/src/OrderEndpoint/obj/*
+bin/
+obj/

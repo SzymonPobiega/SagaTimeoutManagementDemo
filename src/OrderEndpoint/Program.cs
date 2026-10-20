@@ -1,11 +1,10 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using OrderEndpoint;
+using OrderEndpoint.UI;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 var endpointConfiguration = new EndpointConfiguration("SagaTimeoutDemo.Orders");
-endpointConfiguration.UseTransport(new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), builder.Configuration["RabbitMQ:ConnectionString"] ?? "host=localhost"));
+endpointConfiguration.UseTransport(new RabbitMQTransport(RoutingTopology.Conventional(QueueType.Quorum), builder.Configuration.GetTransportConnectionString()));
 endpointConfiguration.UseSerialization<SystemJsonSerializer>();
 // The learning persister is the only one that implements ISupportTimeoutManagement so far
 endpointConfiguration.UsePersistence<LearningPersistence>();
@@ -17,6 +16,8 @@ endpointConfiguration.ReportSagaTimeoutsToServiceControl();
 endpointConfiguration.EnableInstallers();
 
 builder.Services.AddNServiceBusEndpoint(endpointConfiguration);
-builder.Services.AddHostedService<ConsoleCommands>();
+builder.Services.AddSingleton<OrderHistory>();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+app.MapOrderRoutes();
+await app.RunAsync();

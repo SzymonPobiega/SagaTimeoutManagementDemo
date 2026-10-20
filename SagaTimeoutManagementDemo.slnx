@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="src/OrderEndpoint/OrderEndpoint.csproj" />
+  <Project Path="src/AppHost/AppHost.csproj" />
+  <Project Path="src/OrderEndpoint.Tests/OrderEndpoint.Tests.csproj" />
 </Solution>
