@@ -20,8 +20,9 @@ endpointConfiguration.AddSaga<OrderPolicy>();
 endpointConfiguration.SendFailedMessagesTo("error");
 endpointConfiguration.ServiceControlErrorInstanceQueue("Particular.ServiceControl");
 
-//uncomment to allow management in ServiceControl.
-//endpointConfiguration.ReportSagaTimeoutsToServiceControl();
+// #######
+//  - Opt in to timeout management in service control
+endpointConfiguration.ReportSagaTimeoutsToServiceControl();
 
 endpointConfiguration.EnableInstallers();
 

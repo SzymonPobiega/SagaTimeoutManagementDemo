@@ -53,6 +53,7 @@ public class OrderPolicy(ILogger<OrderPolicy> logger, OrderHistory history) : Sa
             // A payload change is stored only because the timeout is rescheduled below
             timeout.Payload.Note = shift > TimeSpan.Zero ? "Postponed by the saga" : "Expedited by the saga";
             RescheduleTimeout(timeout.TimeoutId, newDueTime);
+            
             history.Add(orderId, shift > TimeSpan.Zero ? "Postponed" : "Expedited", $"Due {timeout.DueTime:u} -> {newDueTime:u}; note: {timeout.Payload.Note}");
             logger.LogInformation("Order {OrderId}: buyer's remorse timeout moved from {OldDueTime:u} to {NewDueTime:u}.", orderId, timeout.DueTime, newDueTime);
         }

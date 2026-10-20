@@ -4,7 +4,7 @@ An NServiceBus endpoint on RabbitMQ with one saga, `OrderPolicy`. Starting an or
 
 The demo uses spike builds:
 
-- NServiceBus from `C:\Particular\NServiceBus`, branch `saga-timeout-full-messages-satellite` ([PR #7996](https://github.com/Particular/NServiceBus/pull/7996)), packed into `packages` as version `10.3.0-timeouts.2`
+- NServiceBus from `C:\Particular\NServiceBus`, branch `saga-timeout-full-messages-satellite` ([PR #7996](https://github.com/Particular/NServiceBus/pull/7996)), packed into `packages` as version `10.3.0-timeouts.4`
 - NServiceBus.Persistence.Sql `9.1.0-timeouts.1` from [PR #2139](https://github.com/Particular/NServiceBus.Persistence.Sql/pull/2139) (commit `a16fd73b244271c963cfd1a587487a8c6563ce59`), packed into `packages`; see [Rebuilding the SQL persistence](#rebuilding-the-sql-persistence)
 - ServiceControl from `C:\Particular\ServiceControl-timeouts-spike`, primary instance with RavenDB
 - ServicePulse from `C:\Particular\ServicePulse-timeouts-spike`
@@ -18,7 +18,7 @@ Prerequisites:
 - A container runtime such as Docker; host port 15672 must be free for RabbitMQ's management API (stop a locally running RabbitMQ first)
 - .NET 10 SDK
 - A Particular license. The AppHost passes it on from the `PARTICULARSOFTWARE_LICENSE` environment variable (the license text) or from the default license file location (`%PROGRAMDATA%\ParticularSoftware\license.xml` on Windows)
-- The spike packages `NServiceBus` `10.3.0-timeouts.2` and `NServiceBus.Persistence.Sql` `9.1.0-timeouts.1` in `packages` (see [Rebuilding NServiceBus](#rebuilding-nservicebus) and [Rebuilding the SQL persistence](#rebuilding-the-sql-persistence)); the endpoint does not restore without them
+- The spike packages `NServiceBus` `10.3.0-timeouts.4` and `NServiceBus.Persistence.Sql` `9.1.0-timeouts.1` in `packages` (see [Rebuilding NServiceBus](#rebuilding-nservicebus) and [Rebuilding the SQL persistence](#rebuilding-the-sql-persistence)); the endpoint does not restore without them
 
 ```powershell
 dotnet run --project src\AppHost
@@ -92,22 +92,22 @@ When the timeout fires, the saga logs the note from the timeout payload and comp
 
 ## Rebuilding NServiceBus
 
-Check out `saga-timeout-full-messages-satellite` (PR #7996) in your NServiceBus repository, then run `scripts\pack-nservicebus.ps1 -Repository <path-to-NServiceBus>` to produce the initial `10.3.0-timeouts.2` package. The base `saga-timeout-full-messages` branch does not contain the reporting opt-in API this demo uses.
+Check out `saga-timeout-full-messages-satellite` (PR #7996) in your NServiceBus repository, then run `scripts\pack-nservicebus.ps1 -Repository <path-to-NServiceBus>` to produce the initial `10.3.0-timeouts.4` package. The base `saga-timeout-full-messages` branch does not contain the reporting opt-in API this demo uses.
 
 After changing NServiceBus, pack it with a new version and update `src\OrderEndpoint\OrderEndpoint.csproj` to that version:
 
 ```powershell
-.\scripts\pack-nservicebus.ps1 -Version 10.3.0-timeouts.3
+.\scripts\pack-nservicebus.ps1 -Version 10.3.0-timeouts.5
 ```
 
 ## Rebuilding the SQL persistence
 
-The package is built from the PR #2139 branch of the NServiceBus.Persistence.Sql repository, which depends on a different NServiceBus prerelease than this demo's. Check out the PR branch (commit `a16fd73b244271c963cfd1a587487a8c6563ce59`), then change the `NServiceBus` reference in `src\SqlPersistence\SqlPersistence.csproj` to `10.3.0-timeouts.2`. That is the only source-code change. Add this demo's `packages` folder to the SQL persistence repository's `nuget.config` using the source name `local packages`, which its package source mapping already recognizes, then build and pack with a MinVer override:
+The package is built from the PR #2139 branch of the NServiceBus.Persistence.Sql repository, which depends on a different NServiceBus prerelease than this demo's. Check out the PR branch (commit `a16fd73b244271c963cfd1a587487a8c6563ce59`), then change the `NServiceBus` reference in `src\SqlPersistence\SqlPersistence.csproj` to `10.3.0-timeouts.4`. That is the only source-code change. The existing `9.1.0-timeouts.1` package was built against `10.3.0-timeouts.2`, but its dependency range `[10.3.0-timeouts.2, 11.0.0)` accepts `10.3.0-timeouts.4`, so it does not need rebuilding. Add this demo's `packages` folder to the SQL persistence repository's `nuget.config` using the source name `local packages`, which its package source mapping already recognizes. For a rebuild, use a new SQL package version to avoid NuGet's cache, then update the endpoint's SQL package reference if you use that rebuilt package:
 
 ```powershell
 dotnet nuget add source <path-to-demo>\packages --name "local packages" --configfile nuget.config
-dotnet build src\SqlPersistence\SqlPersistence.csproj -c Release -p:MinVerVersionOverride=9.1.0-timeouts.1
-dotnet pack src\SqlPersistence\SqlPersistence.csproj -c Release --no-build -p:MinVerVersionOverride=9.1.0-timeouts.1 -o <path-to-demo>\packages
+dotnet build src\SqlPersistence\SqlPersistence.csproj -c Release -p:MinVerVersionOverride=9.1.0-timeouts.2
+dotnet pack src\SqlPersistence\SqlPersistence.csproj -c Release --no-build -p:MinVerVersionOverride=9.1.0-timeouts.2 -o <path-to-demo>\packages
 ```
 
 ## Reset
